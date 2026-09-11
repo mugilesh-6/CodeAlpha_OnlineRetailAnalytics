@@ -13,7 +13,7 @@ def test_data_loading():
         df = pd.read_csv(data_path, parse_dates=['InvoiceDate'])
         print(f"✅ Data loaded successfully: {df.shape}")
         print(f"   Date range: {df['InvoiceDate'].min()} to {df['InvoiceDate'].max()}")
-        print(f"   Total revenue: £{df['Revenue'].sum():,.2f}")
+        print(f"   Total revenue: £{df['TotalAmount'].sum():,.2f}")
         return True
     except Exception as e:
         print(f"❌ Error loading data: {e}")
@@ -25,10 +25,10 @@ def test_basic_calculations():
         df = pd.read_csv('data/cleaned/online_retail_cleaned.csv', parse_dates=['InvoiceDate'])
         
         # Test KPI calculations
-        total_revenue = df['Revenue'].sum()
+        total_revenue = df['TotalAmount'].sum()
         total_orders = df['InvoiceNo'].nunique()
         total_customers = df['CustomerID'].nunique()
-        avg_order_value = df.groupby('InvoiceNo')['Revenue'].sum().mean()
+        avg_order_value = df.groupby('InvoiceNo')['TotalAmount'].sum().mean()
         
         print(f"✅ KPI calculations work:")
         print(f"   Total Revenue: £{total_revenue:,.2f}")

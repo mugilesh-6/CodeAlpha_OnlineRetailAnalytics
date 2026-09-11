@@ -94,11 +94,12 @@ def create_kpi_cards(df):
     col1, col2, col3, col4, col5 = st.columns(5)
     
     # Calculate KPIs
-    total_revenue = df['Revenue'].sum()
+    total_revenue = df['TotalAmount'].sum()
     total_orders = df['InvoiceNo'].nunique()
     total_customers = df['CustomerID'].nunique()
     total_products = df['StockCode'].nunique()
-    avg_order_value = df.groupby('InvoiceNo')['Revenue'].sum().mean()
+    avg_order_value = df.groupby('InvoiceNo')['TotalAmount'].sum().mean()
+    avg_order_value = df.groupby('InvoiceNo')['TotalAmount'].sum().mean()
     
     with col1:
         st.markdown(f"""
@@ -175,9 +176,9 @@ def create_filters(df):
     # Revenue range filter
     revenue_range = st.sidebar.slider(
         "Revenue Range (£)",
-        min_value=float(df['Revenue'].min()),
-        max_value=float(df['Revenue'].max()),
-        value=(float(df['Revenue'].min()), float(df['Revenue'].max())),
+        min_value=float(df['TotalAmount'].min()),
+        max_value=float(df['TotalAmount'].max()),
+        value=(float(df['TotalAmount'].min()), float(df['TotalAmount'].max())),
         step=10.0
     )
     
@@ -216,24 +217,24 @@ def apply_filters(df, filters):
     # Revenue range filter
     min_rev, max_rev = filters['revenue_range']
     filtered_df = filtered_df[
-        (filtered_df['Revenue'] >= min_rev) &
-        (filtered_df['Revenue'] <= max_rev)
+        (filtered_df['TotalAmount'] >= min_rev) &
+        (filtered_df['TotalAmount'] <= max_rev)
     ]
     
     return filtered_df
 
 def create_monthly_revenue_chart(df):
     """Create monthly revenue trend chart."""
-    monthly_data = df.groupby(['Year', 'Month'])['Revenue'].sum().reset_index()
+    monthly_data = df.groupby(['Year', 'Month'])['TotalAmount'].sum().reset_index()
     monthly_data['Date'] = pd.to_datetime(monthly_data[['Year', 'Month']].assign(day=1))
     monthly_data = monthly_data.sort_values('Date')
     
     fig = px.line(
         monthly_data, 
         x='Date', 
-        y='Revenue',
+        y='TotalAmount',
         title='📈 Monthly Revenue Trend',
-        labels={'Revenue': 'Revenue (£)', 'Date': 'Date'},
+        labels={'TotalAmount': 'Revenue (£)', 'Date': 'Date'},
         markers=True
     )
     
@@ -250,8 +251,8 @@ def create_monthly_revenue_chart(df):
 def create_top_products_chart(df):
     """Create top products chart."""
     # Filter positive revenues only for top products
-    sales_df = df[df['Revenue'] > 0]
-    top_products = sales_df.groupby(['StockCode', 'Description'])['Revenue'].sum().sort_values(ascending=True).tail(10)
+    sales_df = df[df['TotalAmount'] > 0]
+    top_products = sales_df.groupby(['StockCode', 'Description'])['TotalAmount'].sum().sort_values(ascending=True).tail(10)
     
     # Clean product names for display
     product_names = [desc[:40] + '...' if len(desc) > 40 else desc 
@@ -278,7 +279,7 @@ def create_top_products_chart(df):
 
 def create_country_revenue_chart(df):
     """Create revenue by country chart."""
-    country_revenue = df.groupby('Country')['Revenue'].sum().sort_values(ascending=True).tail(10)
+    country_revenue = df.groupby('Country')['TotalAmount'].sum().sort_values(ascending=True).tail(10)
     
     fig = px.bar(
         x=country_revenue.values,
@@ -337,11 +338,11 @@ def create_scatter_plot(df):
         sample_df,
         x='Quantity',
         y='UnitPrice',
-        size='Revenue',
+        size='TotalAmount',
         color='TransactionType',
         title='📦 Quantity vs Unit Price (bubble size = Revenue)',
         labels={'Quantity': 'Quantity', 'UnitPrice': 'Unit Price (£)'},
-        hover_data=['Revenue', 'Description']
+        hover_data=['TotalAmount', 'Description']
     )
     
     fig.update_layout(
@@ -355,7 +356,7 @@ def create_scatter_plot(df):
 def create_customer_analysis_chart(df):
     """Create customer analysis chart."""
     # Customer segments analysis
-    customer_data = df[df['CustomerID'].notnull()].groupby('CustomerID')['Revenue'].sum()
+    customer_data = df[df['CustomerID'].notnull()].groupby('CustomerID')['TotalAmount'].sum()
     
     # Create segments
     segments = pd.cut(customer_data, 
@@ -384,11 +385,11 @@ def display_insights(df):
     st.markdown("## 💡 Key Business Insights")
     
     # Calculate insights
-    total_revenue = df['Revenue'].sum()
-    uk_revenue = df[df['Country'] == 'United Kingdom']['Revenue'].sum()
+    total_revenue = df['TotalAmount'].sum()
+    uk_revenue = df[df['Country'] == 'United Kingdom']['TotalAmount'].sum()
     uk_percentage = (uk_revenue / total_revenue * 100) if total_revenue > 0 else 0
     
-    avg_order_value = df.groupby('InvoiceNo')['Revenue'].sum().mean()
+    avg_order_value = df.groupby('InvoiceNo')['TotalAmount'].sum().mean()
     
     cancellation_rate = (df['IsCancellation'].sum() / len(df) * 100) if len(df) > 0 else 0
     

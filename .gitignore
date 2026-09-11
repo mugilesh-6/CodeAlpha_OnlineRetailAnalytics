@@ -33,13 +33,11 @@ ENV/
 # Jupyter Notebook
 .ipynb_checkpoints
 
-# Data files (keep structure but ignore large datasets)
-*.csv
-*.xlsx
-*.json
-!data/raw/.gitkeep
-!data/cleaned/.gitkeep
-!data/scraped/.gitkeep
+# Data files (ignore large raw datasets but keep deliverables)
+data/raw/Online Retail.xlsx
+!data/scraped/books_scraped.csv
+!data/cleaned/online_retail_cleaned.csv
+!requirements.txt
 
 # IDE
 .vscode/
