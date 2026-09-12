@@ -59,6 +59,20 @@ st.markdown("""
         border-left: 4px solid #1f77b4;
         margin: 1rem 0;
     }
+    .insight-box h4 {
+        color: #1f2937 !important;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+    .insight-box p {
+        color: #374151 !important;
+        margin-bottom: 0;
+        line-height: 1.4;
+    }
+    .insight-box strong {
+        color: #1f77b4 !important;
+        font-weight: 700;
+    }
     .stSelectbox > div > div {
         background-color: white;
     }
@@ -67,10 +81,23 @@ st.markdown("""
 
 @st.cache_data
 def load_data():
-    """Load and cache the cleaned dataset."""
+    """Load and cache the cleaned dataset with derived date columns."""
     try:
         data_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'cleaned', 'online_retail_cleaned.csv')
         df = pd.read_csv(data_path, parse_dates=['InvoiceDate'])
+        
+        # Create derived date columns for analysis
+        df['Year'] = df['InvoiceDate'].dt.year
+        df['Month'] = df['InvoiceDate'].dt.month
+        df['Day'] = df['InvoiceDate'].dt.day
+        df['Quarter'] = df['InvoiceDate'].dt.quarter
+        df['MonthName'] = df['InvoiceDate'].dt.month_name()
+        df['DayOfWeek'] = df['InvoiceDate'].dt.day_name()
+        
+        # Create transaction type column for easier filtering
+        df['TransactionType'] = df.apply(lambda x: 'Return' if x['IsReturn'] else 
+                                       ('Cancellation' if x['IsCancellation'] else 'Regular Sale'), axis=1)
+        
         return df
     except FileNotFoundError:
         st.error("❌ Data file not found. Please ensure the data cleaning process has been completed.")
@@ -303,9 +330,9 @@ def create_country_revenue_chart(df):
 def create_revenue_distribution_chart(df):
     """Create revenue distribution histogram."""
     # Filter out extreme outliers for better visualization
-    q99 = df['Revenue'].quantile(0.99)
-    q1 = df['Revenue'].quantile(0.01)
-    filtered_revenue = df[(df['Revenue'] >= q1) & (df['Revenue'] <= q99)]['Revenue']
+    q99 = df['TotalAmount'].quantile(0.99)
+    q1 = df['TotalAmount'].quantile(0.01)
+    filtered_revenue = df[(df['TotalAmount'] >= q1) & (df['TotalAmount'] <= q99)]['TotalAmount']
     
     fig = px.histogram(
         x=filtered_revenue,
@@ -334,11 +361,23 @@ def create_scatter_plot(df):
     # Sample data for better performance
     sample_df = df.sample(min(2000, len(df))) if len(df) > 2000 else df
     
+    # Ensure we have valid data
+    if len(sample_df) == 0:
+        # Return empty chart if no data
+        fig = px.scatter(title='📦 No data available for scatter plot')
+        return fig
+    
+    # Create safe marker size from TotalAmount (absolute value, positive minimum)
+    marker_size = sample_df['TotalAmount'].abs()  # Use absolute value to handle negatives
+    marker_size = marker_size.fillna(1)  # Replace NaN with minimum size
+    marker_size = marker_size.replace([np.inf, -np.inf], 1)  # Handle infinite values
+    marker_size = marker_size.clip(lower=1)  # Ensure minimum size of 1
+    
     fig = px.scatter(
         sample_df,
         x='Quantity',
         y='UnitPrice',
-        size='TotalAmount',
+        size=marker_size,  # Use safe positive marker sizes
         color='TransactionType',
         title='📦 Quantity vs Unit Price (bubble size = Revenue)',
         labels={'Quantity': 'Quantity', 'UnitPrice': 'Unit Price (£)'},
